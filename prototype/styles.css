@@ -18,12 +18,14 @@
   --rx: var(--page-w);      /* left edge of the right-hand page = the spine */
   --spine: 50%;             /* spine position across the book, for the turn shadow */
   --board: 14px;            /* navy cover board showing around the pages */
+  --sheet-px: 2px;          /* thickness of one sheet in the page-edge stacks */
 }
 
 @media (max-width: 760px) {
   :root {
     /* Phones show one page at a time; the spine sits on the left edge. */
     --board: 9px;
+    --sheet-px: 1.5px;
     --page-w: min(calc(100vw - 32px - 2 * var(--board)), 420px, 58vh);
     --page-h: calc(var(--page-w) * 1.36);
     --pages-visible: 1;
@@ -165,7 +167,9 @@ body.in-intro .sound-toggle[aria-pressed="true"] { background: var(--navy); colo
   border-radius: 5px 9px 9px 5px;
   background: linear-gradient(155deg, #24345a 0%, var(--navy) 45%, var(--navy-deep) 100%);
   box-shadow: 0 34px 60px -24px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .05) inset;
-  overflow: hidden; /* on phones the turned page leaves to the left and is clipped here */
+  /* No overflow clipping here: Chromium clips a 3D-turned page against an ancestor's
+     overflow box inaccurately and cuts it into steps. A lifted page may extend past the
+     board, as a real one would; body's overflow-x keeps the screen from scrolling. */
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-y; /* vertical scroll stays native; horizontal swipes turn pages */
@@ -197,16 +201,6 @@ body.in-intro .sound-toggle[aria-pressed="true"] { background: var(--navy); colo
   -webkit-backface-visibility: hidden;
 }
 
-/* Shading on a page while it turns. --shade is set from JS (0 = none). */
-.page::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(19, 28, 51, .55) 0%, rgba(19, 28, 51, .12) 45%, rgba(19, 28, 51, 0) 80%);
-  opacity: var(--shade, 0);
-}
-
 .page-left,
 .leaf-back {
   border-radius: 3px 0 0 3px;
@@ -218,25 +212,49 @@ body.in-intro .sound-toggle[aria-pressed="true"] { background: var(--navy); colo
   box-shadow: inset 30px 0 30px -28px rgba(29, 43, 74, .35);
 }
 .page-right { left: var(--rx); }
+.book > .page:not(.is-shown) { visibility: hidden; } /* the spare buffer of each static page */
 
-/* The turning sheet: pivots on its left edge (the spine). */
+/*
+ * The turning sheet. It is built (in app.js) from thin vertical strips, each hinged
+ * to the one before it, so the paper can curl instead of swinging like a board.
+ * Every strip has a front and a back face showing its slice of the two pages.
+ */
 .leaf {
   position: absolute;
   top: 0;
-  left: var(--rx);
+  left: var(--rx); /* the spine */
   width: var(--page-w);
   height: var(--page-h);
   z-index: 3;
   display: none;
-  transform-origin: 0 50%;
   transform-style: preserve-3d;
   pointer-events: none;
+}
+.strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--page-w) / var(--strips));
+  height: 100%;
+  transform-origin: 0 50%;
+  transform-style: preserve-3d;
   will-change: transform;
 }
-.leaf-back { transform: rotateY(180deg); }
-.leaf-back::after { background: linear-gradient(270deg, rgba(19, 28, 51, .55) 0%, rgba(19, 28, 51, .12) 45%, rgba(19, 28, 51, 0) 80%); }
+.face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% + 1px); /* 1px overlap hides hairline seams between strips */
+  height: 100%;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.face-back { transform: rotateY(180deg); }
+.face > .page { top: 0; }
+.face-shade { position: absolute; inset: 0; pointer-events: none; }
 
-/* Shadow cast across the pages near the spine during a turn. */
+/* Shadow near the spine while a sheet is lifted. */
 .under-shade {
   position: absolute;
   inset: 0;
@@ -248,6 +266,37 @@ body.in-intro .sound-toggle[aria-pressed="true"] { background: var(--navy); colo
     rgba(19, 28, 51, .32) var(--spine),
     rgba(19, 28, 51, 0) calc(var(--spine) + 18%));
 }
+
+/* Shadow the turning sheet casts on the page beneath, following its free edge. */
+.cast-clip {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cast {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--page-w) * .3);
+  height: 100%;
+  transform-origin: 0 50%;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(19, 28, 51, .42), rgba(19, 28, 51, .12) 35%, rgba(19, 28, 51, 0));
+}
+
+/* Stacked page edges outside each page: thicker on the side holding more pages. */
+.edges {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: min(calc(var(--sheets, 0) * var(--sheet-px)), calc(var(--board) - 3px));
+  background: repeating-linear-gradient(90deg, #efe7d4 0, #efe7d4 1px, #b4a98f 1px, #b4a98f var(--sheet-px));
+  transition: width .3s ease;
+}
+.edges-left { right: 100%; border-radius: 2px 0 0 2px; }
+.edges-right { left: 100%; border-radius: 0 2px 2px 0; }
 
 /* ---------- Page content ---------- */
 
@@ -450,7 +499,7 @@ body.in-intro .sound-toggle[aria-pressed="true"] { background: var(--navy); colo
 
   .stage { gap: 16px; padding: 0 16px 24px; justify-content: flex-start; }
 
-  .page-left { display: none; }
+  .page-left, .edges-left { display: none; }
   .page-right { border-radius: 2px; box-shadow: none; }
   .leaf-front { border-radius: 2px; box-shadow: none; }
   .under-shade { display: none; }

@@ -28,14 +28,14 @@
     <main class="stage">
       <div class="book-wrap" id="bookWrap">
         <div class="book" id="book" data-spread="0">
+          <div class="edges edges-left" id="edgesLeft" aria-hidden="true"></div>
+          <div class="edges edges-right" id="edgesRight" aria-hidden="true"></div>
           <div class="page page-left" id="pageLeft"></div>
           <div class="page page-right" id="pageRight"></div>
           <div class="under-shade" id="underShade" aria-hidden="true"></div>
-          <!-- The leaf is the single sheet that physically turns. It only appears during a turn. -->
-          <div class="leaf" id="leaf" aria-hidden="true">
-            <div class="page leaf-front" id="leafFront"></div>
-            <div class="page leaf-back" id="leafBack"></div>
-          </div>
+          <div class="cast-clip" aria-hidden="true"><div class="cast" id="cast"></div></div>
+          <!-- The sheet that physically turns. app.js builds its curling strips; it only shows during a turn. -->
+          <div class="leaf" id="leaf" aria-hidden="true" inert></div>
         </div>
       </div>
 

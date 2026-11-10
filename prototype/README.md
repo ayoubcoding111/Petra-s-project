@@ -15,14 +15,19 @@ http://localhost:8000). An internet connection is needed for GSAP and the fonts.
 - **Contents:** each entry turns every page between here and there, in order. Contents to
   Chapter 5 turns 6 pages; Preface turns 1. PETRAFIED opens petrafiedofficial.com in a new tab.
 - **Speed follows distance:** one page takes 0.95s; in a 6-page jump each page takes 0.31s.
-- **Navigation:** Previous / Next, the Contents button (turns back to the contents), swipe on
-  phones (or drag with a mouse), and the arrow, Home and End keys.
-- **Phones** (760px and narrower) show one page at a time; the turned page leaves to the left.
+- **The page bends as it turns.** The sheet is drawn as thin hinged strips that curl, with
+  shading that follows the curve, a shadow cast on the page beneath, and page-edge stacks
+  that show how far through the book you are.
+- **Drag to turn:** on phones (finger) and desktop (mouse) the page follows your hand. Let go past
+  halfway, or flick, and it turns; otherwise it falls back. Vertical swipes still scroll.
+- **Navigation:** Previous / Next, the Contents button (turns back to the contents), and the
+  arrow, Home and End keys.
+- **Phones** (760px and narrower) show one page at a time; the turned page swings off to the left.
 
 ## Edit text and tune the feel
 
 All words are in the `BOOK` object at the top of `app.js`; the comment there explains each field.
-Page-turn speed and lift are in `TIMING`, just below it.
+Page-turn speed, lift and how much the paper bends (`curl`) are in `TIMING`, just below it.
 
 ## Files
 
